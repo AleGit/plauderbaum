@@ -136,3 +136,17 @@ test("a saved tree without a usable end opens on its last branch", () => {
   doc.active = "gone";
   assert.deepEqual(texts(new ConversationTree(doc).activePath), ["Buongiorno!", "Un pane.", "Quale?"]);
 });
+
+test("a learner line's status tells how it went", () => {
+  const tree = start();
+  const opening = tree.active;
+  const clean = tree.addLearnerLine(opening, { text: "Un pane.", typed: "Un pane.", note: "" });
+  const slip = tree.addLearnerLine(opening, { text: "Un pane.", typed: "Uno pane.", note: "" });
+  const noted = tree.addLearnerLine(opening, { text: "Un pane.", typed: "Un pane.", note: "Ok, but…" });
+  const hard = tree.addLearnerLine(opening, { text: "Un pane.", typed: "Un pane.", note: "", retries: 2 });
+  assert.equal(ConversationTree.statusOf(clean), "ok");
+  assert.equal(ConversationTree.statusOf(slip), "minor");
+  assert.equal(ConversationTree.statusOf(noted), "minor");
+  assert.equal(ConversationTree.statusOf(hard), "struggled");
+  assert.equal(ConversationTree.statusOf(opening), null);
+});

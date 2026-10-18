@@ -10,7 +10,7 @@
 export class ConversationTree {
   // `doc` is the conversation as it is saved:
   // {id, title, scenario, situation, target_language, level, voice, created, nodes, active}
-  // with nodes [{id, parent, role, text, translation, typed, note, done, pick}].
+  // with nodes [{id, parent, role, text, translation, typed, note, retries, done, pick}].
   constructor(doc) {
     this.doc = doc;
     if (!this.active) this.activate(this.leafOf(doc.nodes[0]));
@@ -80,9 +80,17 @@ export class ConversationTree {
   }
 
   // The learner's accepted answer to a tutor line. `text` is the corrected
-  // form, `typed` what they wrote.
-  addLearnerLine(tutorNode, { text, typed, note }) {
-    return this.#add({ parent: tutorNode.id, role: "learner", text, typed, note });
+  // form, `typed` what they wrote, `retries` how many attempts failed before.
+  addLearnerLine(tutorNode, { text, typed, note, retries = 0 }) {
+    return this.#add({ parent: tutorNode.id, role: "learner", text, typed, note, retries });
+  }
+
+  // How a learner line went: "struggled" after failed attempts, "minor" when it
+  // passed with a correction or a note, "ok" otherwise. Null for tutor lines.
+  static statusOf(node) {
+    if (node.role !== "learner") return null;
+    if (node.retries) return "struggled";
+    return (node.typed && node.typed !== node.text) || node.note ? "minor" : "ok";
   }
 
   // A tutor line answering a learner line, or another opening line if there is none.

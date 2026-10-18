@@ -45,13 +45,21 @@
             <div id="session-title" class="session-title"></div>
             <div id="situation" class="situation"></div>
           </div>
-          <button id="leave" class="secondary" type="button">← All conversations</button>
+          <span class="row">
+            <button id="tree-toggle" class="secondary" type="button" aria-pressed="true" aria-controls="tree" title="Show or hide the conversation tree">🌳 Tree</button>
+            <button id="leave" class="secondary" type="button">← All conversations</button>
+          </span>
         </div>
-        <div id="chat" class="chat" aria-live="polite"></div>
-        <form id="composer" class="composer">
-          <input id="input" type="text" maxlength="1000" autocomplete="off" spellcheck="false">
-          <button type="submit">Send</button>
-        </form>
+        <div class="session-body">
+          <div class="conversation">
+            <div id="chat" class="chat" aria-live="polite"></div>
+            <form id="composer" class="composer">
+              <input id="input" type="text" maxlength="1000" autocomplete="off" spellcheck="false">
+              <button type="submit">Send</button>
+            </form>
+          </div>
+          <aside id="tree" class="tree" aria-label="Conversation tree"></aside>
+        </div>
       </div>
     </section>
 

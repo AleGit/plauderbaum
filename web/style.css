@@ -98,7 +98,7 @@ button {
 button.secondary { background: transparent; color: var(--ink); border: 1px solid var(--line); }
 button:disabled { opacity: .5; cursor: default; }
 /* while the model is answering, nothing else can be started */
-.busy :is(.scenario, .custom button, .history button, .rewind, .switcher, .branches button, #leave) { opacity: .5; pointer-events: none; }
+.busy :is(.scenario, .custom button, .history button, .rewind, .switcher, .branches button, #leave, .tree button) { opacity: .5; pointer-events: none; }
 button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
   outline: 2px solid var(--green);
   outline-offset: 2px;
@@ -167,7 +167,68 @@ input[type="text"], input[type="password"], select {
   margin-top: -28px;
   padding: 20px 0 12px;
 }
+.session-bar .row { display: flex; gap: 8px; }
 .session-bar button { flex: none; }
+/* the tree sits beside the chat; the page widens to make room for it */
+#session:has(.tree:not([hidden])) { max-width: 1100px; }
+.session-body { flex: 1; min-height: 0; display: flex; gap: 20px; align-items: flex-start; }
+.conversation { flex: 1; min-width: 0; display: flex; flex-direction: column; align-self: stretch; }
+.tree {
+  flex: none;
+  width: 280px;
+  min-width: 180px;
+  max-width: 60vw;
+  resize: horizontal;
+  overflow: auto;
+  position: sticky;
+  top: 44px;
+  max-height: calc(100vh - 180px);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  font-size: .85rem;
+  box-shadow: var(--shadow);
+}
+.tree ul { list-style: none; margin: 0; padding: 0 0 0 14px; border-left: 1px solid var(--line); }
+.tree > ul { padding-left: 0; border-left: 0; }
+.tree li { margin: 2px 0; }
+.tree .node {
+  display: block;
+  width: 100%;
+  padding: 3px 6px 3px 18px;
+  position: relative;
+  background: none;
+  color: var(--muted);
+  font-weight: 400;
+  text-align: left;
+  border-radius: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tree .node::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background: var(--line);
+}
+.tree .node.ok::before { background: var(--green); }
+.tree .node.minor::before { background: #d9a400; }
+.tree .node.struggled::before { background: var(--red); }
+.tree .node.done::after { content: " ✓"; color: var(--green); }
+.tree .node:hover { background: var(--bg); color: var(--ink); }
+.tree .node.on-path { color: var(--ink); }
+.tree .node.active { font-weight: 650; background: var(--green-soft); }
+@media (max-width: 720px) {
+  .session-body { flex-direction: column-reverse; }
+  .tree { position: static; width: 100%; max-width: none; max-height: 40vh; resize: vertical; }
+}
 .session-title { font-weight: 650; }
 .situation { color: var(--muted); font-size: .95rem; }
 
