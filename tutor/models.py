@@ -58,6 +58,8 @@ class Node(BaseModel):
     translation: str = Field(default="", max_length=2000)
     typed: str = Field(default="", max_length=1000)
     note: str = Field(default="", max_length=4000)
+    # For a learner line: how many attempts failed before this one passed.
+    retries: int = Field(default=0, ge=0)
     # A tutor line that closes the scene.
     done: bool = False
     # The child that was shown last, so that switching back to this branch

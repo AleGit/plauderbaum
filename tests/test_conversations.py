@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 
 from tutor.conversations import ConversationStore
+from tutor.models import Node
 
 FIRST = "11111111-1111-1111-1111-111111111111"
 SECOND = "22222222-2222-2222-2222-222222222222"
@@ -69,3 +70,10 @@ class ConversationStoreTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class NodeTest(unittest.TestCase):
+    def test_a_learner_line_keeps_its_failed_attempts(self):
+        node = Node(id="n2", parent="n1", role="learner", text="Un pane.", typed="Uno pane.", retries=2)
+        self.assertEqual(node.model_dump()["retries"], 2)
+        self.assertEqual(Node(id="n1", role="tutor", text="Ciao").retries, 0)

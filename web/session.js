@@ -8,6 +8,7 @@ import { autoSay, say, setConversationVoice } from "./speech.js";
 import { state } from "./state.js";
 import { loadConversation, saveConversation } from "./store.js";
 import { ConversationTree } from "./tree.js";
+import { createTreeView } from "./tree-view.js";
 
 const input = $("#input");
 const sendButton = $("#composer button");
@@ -16,6 +17,9 @@ const view = createChatView($("#chat"), $("#tab-tutor"), {
   onOtherReply: otherReply,
   onShowBranch: showBranch,
 });
+const treeView = createTreeView($("#tree"), $("#tree-toggle"), { onPick: rewindTo });
+// failed attempts per tutor line, until an answer to it is accepted
+const failed = new Map();
 
 // While busy, nothing else can be started; the page dims what cannot be clicked.
 function setBusy(busy) {
@@ -54,6 +58,7 @@ function show(tree, voice) {
   input.placeholder = `Answer in ${languageName(tree)}, or in your native language when you are stuck`;
   showPage("session");
   view.renderPath(tree);
+  treeView.render(tree);
 }
 
 // What every model call for this conversation carries: the scenario, the lines
@@ -114,6 +119,13 @@ export async function openConversation(id) {
 async function sendMessage(text) {
   const tree = state.tree;
   const current = tree.active;
+  // said before: go back to that branch instead of starting a second one
+  const same = tree.sameAnswer(current, text);
+  if (same) {
+    failed.delete(current.id);
+    showBranch(same);
+    return;
+  }
   const attempt = view.addAttempt(text);
   setBusy(true);
   try {
@@ -124,7 +136,9 @@ async function sendMessage(text) {
         text: result.ideal || text,
         typed: text,
         note: result.explanation,
+        retries: failed.get(current.id) || 0,
       });
+      failed.delete(current.id);
       const tutor = tree.addTutorLine(learner, {
         text: result.tutor_reply,
         translation: result.tutor_reply_translation,
@@ -134,8 +148,10 @@ async function sendMessage(text) {
       saveConversation(tree);
       attempt.remove();
       view.appendLines(tree, [learner, tutor]);
+      treeView.render(tree);
       autoSay(tutor.text);
     } else {
+      failed.set(current.id, (failed.get(current.id) || 0) + 1);
       // the tree stays where it was, the learner tries this turn again
       view.addCorrection(attempt, result, languageName(tree));
       autoSay(result.ideal);
@@ -171,6 +187,7 @@ async function otherReply(node) {
     tree.activate(tutor);
     saveConversation(tree);
     view.renderPath(tree);
+    treeView.render(tree);
     autoSay(tutor.text);
   } catch (error) {
     toast(error.message, true);
@@ -179,13 +196,15 @@ async function otherReply(node) {
   }
 }
 
-// End the shown conversation on this tutor line, to answer it differently.
+// End the shown conversation on this line, to answer it differently or, at a
+// learner line, to ask for another reply.
 function rewindTo(node) {
   if (state.busy) return;
   say();
-  state.tree.activate(node);
+  state.tree.rewindTo(node);
   saveConversation(state.tree);
   view.renderPath(state.tree);
+  treeView.render(state.tree);
   setBusy(false);
 }
 
@@ -195,6 +214,7 @@ function showBranch(node) {
   state.tree.showBranch(node);
   saveConversation(state.tree);
   view.renderPath(state.tree);
+  treeView.render(state.tree);
   setBusy(false);
 }
 

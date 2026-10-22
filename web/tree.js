@@ -10,7 +10,7 @@
 export class ConversationTree {
   // `doc` is the conversation as it is saved:
   // {id, title, scenario, situation, target_language, level, voice, created, nodes, active}
-  // with nodes [{id, parent, role, text, translation, typed, note, done, pick}].
+  // with nodes [{id, parent, role, text, translation, typed, note, retries, done, pick}].
   constructor(doc) {
     this.doc = doc;
     if (!this.active) this.activate(this.leafOf(doc.nodes[0]));
@@ -80,9 +80,17 @@ export class ConversationTree {
   }
 
   // The learner's accepted answer to a tutor line. `text` is the corrected
-  // form, `typed` what they wrote.
-  addLearnerLine(tutorNode, { text, typed, note }) {
-    return this.#add({ parent: tutorNode.id, role: "learner", text, typed, note });
+  // form, `typed` what they wrote, `retries` how many attempts failed before.
+  addLearnerLine(tutorNode, { text, typed, note, retries = 0 }) {
+    return this.#add({ parent: tutorNode.id, role: "learner", text, typed, note, retries });
+  }
+
+  // How a learner line went: "struggled" after failed attempts, "minor" when it
+  // passed with a correction or a note, "ok" otherwise. Null for tutor lines.
+  static statusOf(node) {
+    if (node.role !== "learner") return null;
+    if (node.retries) return "struggled";
+    return (node.typed && node.typed !== node.text) || node.note ? "minor" : "ok";
   }
 
   // A tutor line answering a learner line, or another opening line if there is none.
@@ -97,13 +105,23 @@ export class ConversationTree {
     return node;
   }
 
+  // The answer to `node` that was shown last, or undefined if there is none.
+  #shownChild(node) {
+    const children = this.childrenOf(node.id);
+    return children.find((child) => child.id === node.pick) || children[children.length - 1];
+  }
+
   // The end of the branch through `node`, following the line that was shown last.
   leafOf(node) {
-    for (;;) {
-      const children = this.childrenOf(node.id);
-      if (!children.length) return node;
-      node = children.find((child) => child.id === node.pick) || children[children.length - 1];
-    }
+    for (let child = this.#shownChild(node); child; child = this.#shownChild(node)) node = child;
+    return node;
+  }
+
+  // The learner's earlier answer to `tutorNode` that says the same as `text`,
+  // differing at most in case, punctuation and spacing; undefined if none does.
+  sameAnswer(tutorNode, text) {
+    const plain = (line) => (line || "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+    return this.childrenOf(tutorNode.id).find((node) => [node.typed, node.text].some((line) => line && plain(line) === plain(text)));
   }
 
   // Make `node` the end of the shown conversation and remember the way to it.
@@ -112,6 +130,12 @@ export class ConversationTree {
       parent.pick = child.id;
     }
     this.doc.active = node.id;
+  }
+
+  // End the shown conversation at `node`, to go on differently from there: at
+  // a tutor line itself, at a learner line with the reply shown to it.
+  rewindTo(node) {
+    this.activate(node.role === "learner" ? this.#shownChild(node) : node);
   }
 
   // Show the branch through `node`, continued to where it was left.

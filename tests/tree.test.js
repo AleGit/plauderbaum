@@ -136,3 +136,40 @@ test("a saved tree without a usable end opens on its last branch", () => {
   doc.active = "gone";
   assert.deepEqual(texts(new ConversationTree(doc).activePath), ["Buongiorno!", "Un pane.", "Quale?"]);
 });
+
+test("a learner line's status tells how it went", () => {
+  const tree = start();
+  const opening = tree.active;
+  const clean = tree.addLearnerLine(opening, { text: "Un pane.", typed: "Un pane.", note: "" });
+  const slip = tree.addLearnerLine(opening, { text: "Un pane.", typed: "Uno pane.", note: "" });
+  const noted = tree.addLearnerLine(opening, { text: "Un pane.", typed: "Un pane.", note: "Ok, but…" });
+  const hard = tree.addLearnerLine(opening, { text: "Un pane.", typed: "Un pane.", note: "", retries: 2 });
+  assert.equal(ConversationTree.statusOf(clean), "ok");
+  assert.equal(ConversationTree.statusOf(slip), "minor");
+  assert.equal(ConversationTree.statusOf(noted), "minor");
+  assert.equal(ConversationTree.statusOf(hard), "struggled");
+  assert.equal(ConversationTree.statusOf(opening), null);
+});
+
+test("rewinding to a learner line ends on the reply shown to it", () => {
+  const tree = start();
+  const opening = tree.active;
+  const [bread, which] = exchange(tree, opening, "Un pane.", "Quale?");
+  exchange(tree, which, "Integrale.", "Ecco.");
+  tree.rewindTo(bread);
+  assert.deepEqual(texts(tree.activePath), ["Buongiorno!", "Un pane.", "Quale?"]);
+  tree.rewindTo(opening);
+  assert.deepEqual(texts(tree.activePath), ["Buongiorno!"]);
+  // the branch below is kept and comes back when it is shown again
+  tree.showBranch(bread);
+  assert.deepEqual(texts(tree.activePath), ["Buongiorno!", "Un pane.", "Quale?", "Integrale.", "Ecco."]);
+});
+
+test("the same answer again is found, whatever its case and punctuation", () => {
+  const tree = start();
+  const opening = tree.active;
+  const [bread] = exchange(tree, opening, "Un pane, grazie.", "Quale?");
+  assert.equal(tree.sameAnswer(opening, "un pane grazie"), bread);
+  assert.equal(tree.sameAnswer(opening, "Una torta."), undefined);
+  assert.equal(tree.sameAnswer(opening, "?"), undefined);
+});
