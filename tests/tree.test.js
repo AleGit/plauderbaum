@@ -150,3 +150,26 @@ test("a learner line's status tells how it went", () => {
   assert.equal(ConversationTree.statusOf(hard), "struggled");
   assert.equal(ConversationTree.statusOf(opening), null);
 });
+
+test("rewinding to a learner line ends on the reply shown to it", () => {
+  const tree = start();
+  const opening = tree.active;
+  const [bread, which] = exchange(tree, opening, "Un pane.", "Quale?");
+  exchange(tree, which, "Integrale.", "Ecco.");
+  tree.rewindTo(bread);
+  assert.deepEqual(texts(tree.activePath), ["Buongiorno!", "Un pane.", "Quale?"]);
+  tree.rewindTo(opening);
+  assert.deepEqual(texts(tree.activePath), ["Buongiorno!"]);
+  // the branch below is kept and comes back when it is shown again
+  tree.showBranch(bread);
+  assert.deepEqual(texts(tree.activePath), ["Buongiorno!", "Un pane.", "Quale?", "Integrale.", "Ecco."]);
+});
+
+test("the same answer again is found, whatever its case and punctuation", () => {
+  const tree = start();
+  const opening = tree.active;
+  const [bread] = exchange(tree, opening, "Un pane, grazie.", "Quale?");
+  assert.equal(tree.sameAnswer(opening, "un pane grazie"), bread);
+  assert.equal(tree.sameAnswer(opening, "Una torta."), undefined);
+  assert.equal(tree.sameAnswer(opening, "?"), undefined);
+});

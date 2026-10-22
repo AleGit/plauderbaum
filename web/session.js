@@ -17,7 +17,7 @@ const view = createChatView($("#chat"), $("#tab-tutor"), {
   onOtherReply: otherReply,
   onShowBranch: showBranch,
 });
-const treeView = createTreeView($("#tree"), $("#tree-toggle"), { onPick: showBranch });
+const treeView = createTreeView($("#tree"), $("#tree-toggle"), { onPick: rewindTo });
 // failed attempts per tutor line, until an answer to it is accepted
 const failed = new Map();
 
@@ -119,6 +119,13 @@ export async function openConversation(id) {
 async function sendMessage(text) {
   const tree = state.tree;
   const current = tree.active;
+  // said before: go back to that branch instead of starting a second one
+  const same = tree.sameAnswer(current, text);
+  if (same) {
+    failed.delete(current.id);
+    showBranch(same);
+    return;
+  }
   const attempt = view.addAttempt(text);
   setBusy(true);
   try {
@@ -189,11 +196,12 @@ async function otherReply(node) {
   }
 }
 
-// End the shown conversation on this tutor line, to answer it differently.
+// End the shown conversation on this line, to answer it differently or, at a
+// learner line, to ask for another reply.
 function rewindTo(node) {
   if (state.busy) return;
   say();
-  state.tree.activate(node);
+  state.tree.rewindTo(node);
   saveConversation(state.tree);
   view.renderPath(state.tree);
   treeView.render(state.tree);

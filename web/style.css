@@ -180,9 +180,10 @@ input[type="text"], input[type="password"], select {
   max-width: 60vw;
   resize: horizontal;
   overflow: auto;
+  /* full height and its own scrolling, it stays put while the chat scrolls */
   position: sticky;
   top: 44px;
-  max-height: calc(100vh - 180px);
+  height: calc(100vh - 180px);
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -190,9 +191,44 @@ input[type="text"], input[type="password"], select {
   font-size: .85rem;
   box-shadow: var(--shadow);
 }
-.tree ul { list-style: none; margin: 0; padding: 0 0 0 14px; border-left: 1px solid var(--line); }
-.tree > ul { padding-left: 0; border-left: 0; }
+.tree ul { list-style: none; margin: 0; padding: 0; }
 .tree li { margin: 2px 0; }
+/* where answers part, a line drops from the dot of the line above and bends
+   into each alternative: ├ for all but the last, └ for the last */
+.tree li.branch { position: relative; margin: 0; padding-left: 18px; }
+.tree li.branch::before {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 0;
+  bottom: 0;
+  border-left: 2px solid var(--line);
+}
+.tree li.branch:last-child::before { bottom: auto; height: 16px; }
+.tree li.branch::after {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 14px;
+  width: 14px;
+  border-top: 2px solid var(--line);
+}
+.tree li.branch:has(> ul > li:first-child > .on-path)::after { border-color: var(--green); }
+/* the first line of an alternative carries a button that folds it away */
+.tree li:has(> .fold) { display: flex; align-items: center; }
+.tree li:has(> .fold) > .node { flex: 1; min-width: 0; }
+.tree .fold {
+  flex: none;
+  width: 16px;
+  padding: 0;
+  background: none;
+  color: var(--muted);
+  font-size: .75rem;
+  line-height: 1.6;
+  border-radius: 4px;
+}
+.tree .fold:hover { color: var(--ink); background: var(--bg); }
+.tree .fold:disabled { visibility: hidden; }
 .tree .node {
   display: block;
   width: 100%;
@@ -218,6 +254,8 @@ input[type="text"], input[type="password"], select {
   border-radius: 50%;
   background: var(--line);
 }
+/* the tutor's lines are written by the model: a robot instead of a dot */
+.tree .node.tutor::before { content: "🤖"; background: none; left: 2px; width: 12px; height: 12px; margin-top: -6px; font-size: 10px; line-height: 12px; }
 .tree .node.ok::before { background: var(--green); }
 .tree .node.minor::before { background: #d9a400; }
 .tree .node.struggled::before { background: var(--red); }
@@ -227,7 +265,7 @@ input[type="text"], input[type="password"], select {
 .tree .node.active { font-weight: 650; background: var(--green-soft); }
 @media (max-width: 720px) {
   .session-body { flex-direction: column-reverse; }
-  .tree { position: static; width: 100%; max-width: none; max-height: 40vh; resize: vertical; }
+  .tree { position: static; width: 100%; max-width: none; height: auto; max-height: 40vh; resize: vertical; }
 }
 .session-title { font-weight: 650; }
 .situation { color: var(--muted); font-size: .95rem; }

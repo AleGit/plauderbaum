@@ -106,7 +106,7 @@ Download the newer zip, unpack it into a folder of its own and start it there. S
    - *↩ Answer from here* on any earlier line rewinds to that point, so you can answer differently.
    - *⟳ Other reply* asks for a different reaction from the other person.
    - Where a turn has several versions, `‹ 2/3 ›` switches between them.
-   - The **tree** beside the chat shows every branch. Click a line to show its branch. Your lines are marked green when they passed as typed, amber when they passed with a small correction, red when it took more than one attempt; a tick marks a branch that reached the end. *🌳 Tree* folds it away, and its corner drags it wider.
+   - The **tree** beside the chat shows every branch; it only indents where the conversation forks, and ▾ folds an alternative away. Click a line to go back to it: at the other person's line (🤖) you can answer differently, at your own line ask for another reply. Typing an answer you already gave there takes you back to that branch. Your lines are marked green when they passed as typed, amber when they passed with a small correction, red when it took more than one attempt; a tick marks a branch that reached the end. *🌳 Tree* folds it away, and its corner drags it wider.
 5. **At the end** you get the whole conversation in its corrected form and can play it back in one go.
 
 *← All conversations* and the logo both lead back to the start page. The conversation you leave is already saved and listed there under *Earlier conversations*.
@@ -204,7 +204,7 @@ The model only ever sees your lines in their corrected form, so earlier mistakes
 
 ### The conversation tree
 
-A conversation is a tree of lines in which tutor and learner alternate. Rewinding and answering again, or asking for another reply, adds a sibling to an existing line instead of replacing it. The conversation on screen is one path through the tree, from the opening line to the line it currently ends on. Each line remembers which of its answers was shown last, so switching back to a branch continues where you left it.
+A conversation is a tree of lines in which tutor and learner alternate. Rewinding and answering again, or asking for another reply, adds a sibling to an existing line instead of replacing it. The conversation on screen is one path through the tree, from the opening line to the line it currently ends on. Each line remembers which of its answers was shown last, so switching back to a branch continues where you left it. An answer that matches an earlier one at the same point, ignoring case and punctuation, returns to that branch instead of adding a sibling.
 
 The server keeps no conversation state between requests. The page owns the tree, sends the relevant path with every model call, and stores the whole tree through `PUT /api/conversations/{id}` after every change. Failed attempts and correction cards are not part of the tree; a learner line only records how many attempts failed before it was accepted.
 

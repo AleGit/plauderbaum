@@ -105,13 +105,23 @@ export class ConversationTree {
     return node;
   }
 
+  // The answer to `node` that was shown last, or undefined if there is none.
+  #shownChild(node) {
+    const children = this.childrenOf(node.id);
+    return children.find((child) => child.id === node.pick) || children[children.length - 1];
+  }
+
   // The end of the branch through `node`, following the line that was shown last.
   leafOf(node) {
-    for (;;) {
-      const children = this.childrenOf(node.id);
-      if (!children.length) return node;
-      node = children.find((child) => child.id === node.pick) || children[children.length - 1];
-    }
+    for (let child = this.#shownChild(node); child; child = this.#shownChild(node)) node = child;
+    return node;
+  }
+
+  // The learner's earlier answer to `tutorNode` that says the same as `text`,
+  // differing at most in case, punctuation and spacing; undefined if none does.
+  sameAnswer(tutorNode, text) {
+    const plain = (line) => (line || "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+    return this.childrenOf(tutorNode.id).find((node) => [node.typed, node.text].some((line) => line && plain(line) === plain(text)));
   }
 
   // Make `node` the end of the shown conversation and remember the way to it.
@@ -120,6 +130,12 @@ export class ConversationTree {
       parent.pick = child.id;
     }
     this.doc.active = node.id;
+  }
+
+  // End the shown conversation at `node`, to go on differently from there: at
+  // a tutor line itself, at a learner line with the reply shown to it.
+  rewindTo(node) {
+    this.activate(node.role === "learner" ? this.#shownChild(node) : node);
   }
 
   // Show the branch through `node`, continued to where it was left.
