@@ -109,6 +109,8 @@ Download the newer zip, unpack it into a folder of its own and start it there. S
    - The **tree** beside the chat shows every branch; it only indents where the conversation forks, and ▾ folds an alternative away. Click a line to go back to it: at the other person's line (🤖) you can answer differently, at your own line ask for another reply. Typing an answer you already gave there takes you back to that branch. Your lines are marked green when they passed as typed, amber when they passed with a small correction, red when it took more than one attempt; a tick marks a branch that reached the end. *🌳 Tree* folds it away, and its corner drags it wider.
 5. **At the end** you get the whole conversation in its corrected form and can play it back in one go.
 
+<img src="docs/screenshots/tree.png" width="304" alt="The tree of a café conversation: the waiter's lines marked with a robot, the learner's with coloured dots, and two forks where a different reply and a different answer were tried">
+
 *← All conversations* and the logo both lead back to the start page. The conversation you leave is already saved and listed there under *Earlier conversations*.
 
 ## Settings
