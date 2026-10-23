@@ -5,11 +5,12 @@ Practise everyday conversations in a foreign language with an AI tutor.
 
 To start
 --------
-1. Install Python 3.12 or newer, if "py --version" in a terminal does not
-   already print it: https://www.python.org/downloads/
-   or run: winget install Python.Python.3.12
-2. Double-click run.bat. The first start takes a minute, because it sets up
-   a private Python environment in the folder .venv next to it.
+1. Install Python 3.12 or newer, if it is not already installed:
+   https://www.python.org/downloads/
+   On Windows you can instead run: winget install Python.Python.3.12
+2. On Windows, double-click run.bat. On macOS, run ./run.sh in a terminal
+   from this folder. The first start takes a minute, because it sets up a
+   private Python environment in the folder .venv next to it.
 3. Open Settings in the app and add your Anthropic or OpenRouter API key.
 
 For a shortcut with an icon, run in this folder:

@@ -48,7 +48,7 @@ class PackageTest(unittest.TestCase):
     def test_contains_what_is_needed_to_run(self):
         root = f"Plauderbaum_{tutor.__version__}"
         for needed in [
-            "run.bat", "requirements.txt", "LICENSE", "readme.txt",
+            "run.bat", "run.sh", "requirements.txt", "LICENSE", "readme.txt",
             "tutor/__main__.py", "tutor/llm/claude.py", "web/index.html", "web/main.js",
             "assets/icon.png", "tools/make_shortcut.ps1",
         ]:

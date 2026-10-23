@@ -1,25 +1,38 @@
-"""Opens the app in its own window, using an installed Edge or Chrome."""
+"""Opens the app in its own window, using an installed Chromium browser."""
 
 import os
 import subprocess
+import sys
 import webbrowser
 from pathlib import Path
 
 
-def _find_app_browser() -> Path | None:
-    candidates = [
+def _browser_candidates() -> list[Path]:
+    if sys.platform == "darwin":
+        # The binary inside the app bundle accepts the same --app flags as on Windows.
+        names = ("Microsoft Edge", "Google Chrome", "Chromium", "Brave Browser")
+        roots = (Path("/Applications"), Path.home() / "Applications")
+        return [
+            root / f"{name}.app" / "Contents" / "MacOS" / name
+            for root in roots
+            for name in names
+        ]
+    return [
         Path(os.environ.get("ProgramFiles(x86)", "")) / "Microsoft/Edge/Application/msedge.exe",
         Path(os.environ.get("ProgramFiles", "")) / "Microsoft/Edge/Application/msedge.exe",
         Path(os.environ.get("ProgramFiles", "")) / "Google/Chrome/Application/chrome.exe",
     ]
-    return next((p for p in candidates if p.is_file()), None)
+
+
+def _find_app_browser() -> Path | None:
+    return next((path for path in _browser_candidates() if path.is_file()), None)
 
 
 def open_window(url: str, profile: Path) -> subprocess.Popen | None:
     """Open the app in its own window. Returns the browser process if we own it.
 
-    Without Edge or Chrome the page opens as a tab in the default browser, and
-    there is no process to wait for.
+    Without Edge, Chrome, Chromium, or Brave the page opens as a tab in the
+    default browser, and there is no process to wait for.
     """
     browser = _find_app_browser()
     if browser is None:

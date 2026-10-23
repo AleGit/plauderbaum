@@ -15,7 +15,7 @@ from tutor import __version__  # noqa: E402  (needs the path set above)
 
 # What a user needs. Tests, CI, screenshots and this folder stay out.
 FOLDERS = ["tutor", "web", "assets", "tools"]
-FILES = ["run.bat", "requirements.txt", "LICENSE"]
+FILES = ["run.bat", "run.sh", "requirements.txt", "LICENSE"]
 README = Path(__file__).parent / "readme.txt"
 
 
