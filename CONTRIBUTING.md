@@ -23,6 +23,8 @@ Run the tests from the app folder:
 node --test
 ```
 
+On macOS the Python command is `.venv/bin/python -m unittest discover -s tests`.
+
 - Keep interface texts, comments and documentation in English.
 - New Python packages go into `requirements.in`, and `requirements.txt` is regenerated from it with hashes (see the comment at the top of `requirements.in`).
 - Do not include API keys, saved conversations or anything else from your own data folder.

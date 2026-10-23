@@ -3,7 +3,7 @@
 [![CI](https://github.com/guHe330/plauderbaum/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/guHe330/plauderbaum/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/guHe330/plauderbaum)](https://github.com/guHe330/plauderbaum/releases/latest)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](LICENSE)
-[![Platform: Windows 10 | 11](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0078d4.svg)](#what-you-need)
+[![Platform: Windows 10 | 11, macOS](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011%2C%20macOS-0078d4.svg)](#what-you-need)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-3776ab.svg?logo=python&logoColor=white)](#what-you-need)
 [![Code: 100% agentic](https://img.shields.io/badge/code-100%25%20agentic-8FD9B6.svg)](CONTRIBUTING.md#good-to-know)
 
@@ -33,7 +33,7 @@ A small local app for practising everyday conversations in a foreign language. Y
 
 | | |
 |---|---|
-| Operating system | Windows 10 or 11. The app itself is not Windows-specific, but the starter (`run.bat`) is. See [Other platforms](#other-platforms). |
+| Operating system | Windows 10 or 11, or macOS. On Windows, start with `run.bat`. On macOS, start with `./run.sh`. |
 | Python | 3.12 or newer |
 | Browser | Microsoft Edge or Google Chrome (Edge is part of Windows) |
 | API key | An [Anthropic API key](https://console.anthropic.com/) or an [OpenRouter key](https://openrouter.ai/keys), with some credit on it |
@@ -66,11 +66,11 @@ git clone https://github.com/guHe330/plauderbaum.git
 
 ### 3. Run it
 
-Double-click **`run.bat`**.
+On Windows, double-click **`run.bat`**. On macOS, run **`./run.sh`** in a terminal from the app folder (Python 3.12 or newer has to be available as `python3`).
 
 The first start takes a minute: it creates a private Python environment in the folder `.venv` and installs the pinned dependencies from `requirements.txt` into it. After an update that changes `requirements.txt`, the next start installs again. Nothing is installed system-wide. After that the app opens in its own window.
 
-If the setup fails, delete the `.venv` folder and start `run.bat` again.
+If the setup fails, delete the `.venv` folder and start again.
 
 ### 4. Add your API key
 
@@ -141,14 +141,14 @@ Nothing personal is kept in the program folder.
 
 | What | Where |
 |---|---|
-| Settings | `%APPDATA%\Plauderbaum\settings.json` |
-| API keys | Windows Credential Manager, as *Plauderbaum* under *Windows Credentials* |
-| Saved conversations, one file each | `%APPDATA%\Plauderbaum\conversations\` |
-| Browser profile of the app window | `%LOCALAPPDATA%\Plauderbaum\browser-profile\` |
+| Settings | `%APPDATA%\Plauderbaum\settings.json` on Windows, `~/Library/Application Support/Plauderbaum/settings.json` on macOS |
+| API keys | Windows Credential Manager, or the macOS login keychain, as *Plauderbaum* |
+| Saved conversations, one file each | `%APPDATA%\Plauderbaum\conversations\` on Windows, `~/Library/Application Support/Plauderbaum/conversations/` on macOS |
+| Browser profile of the app window | `%LOCALAPPDATA%\Plauderbaum\browser-profile\` on Windows, `~/Library/Caches/Plauderbaum/browser-profile/` on macOS |
 
 The keys are not written to a file: they are kept in the credential store of your user account and can be viewed or removed there (Control Panel → Credential Manager). A key from an earlier version that still sits in `settings.json` is moved over at the next start. Instead of saving a key you can set the environment variable `ANTHROPIC_API_KEY` or `OPENROUTER_API_KEY`.
 
-To remove everything the app has stored, delete those two `Plauderbaum` folders and the *Plauderbaum* entries in the Credential Manager.
+To remove everything the app has stored, delete those two `Plauderbaum` folders and the *Plauderbaum* entries in Credential Manager (Windows) or Keychain Access (macOS).
 
 ### What leaves your computer
 
@@ -213,7 +213,8 @@ The server keeps no conversation state between requests. The page owns the tree,
 ### Code layout
 
 ```
-run.bat               starter: creates .venv on first run, then `python -m tutor`
+run.bat               starter on Windows: creates .venv on first run, then `python -m tutor`
+run.sh                the same starter for macOS
 requirements.in       the packages used directly
 requirements.txt      generated from it: every package pinned, with hashes
 tutor/
@@ -263,9 +264,11 @@ Run the tests from the app folder:
 node --test
 ```
 
+On macOS the Python command is `.venv/bin/python -m unittest discover -s tests`.
+
 The Python tests cover settings, conversation storage, answer parsing, provider error handling and the prompts, without calling a model. The JavaScript tests cover the conversation tree and need Node.js 22 or newer; the app itself does not need Node.
 
-To start without `run.bat`: `.venv\Scripts\python.exe -m tutor`.
+To start without the starter script: `.venv\Scripts\python.exe -m tutor` on Windows, or `.venv/bin/python -m tutor` on macOS.
 
 ### Releases
 
@@ -283,7 +286,8 @@ The [release workflow](.github/workflows/release.yml) refuses a tag that does no
 | | |
 |---|---|
 | Windows with Edge or Chrome | Works. This is what it is built and used on. |
-| macOS, Linux | Not supported yet. The Python code and the page are not tied to Windows, but there is no starter script, and the app window is only looked for in the Windows install locations. |
+| macOS with Edge, Chrome, Chromium, or Brave | Works. Start with `./run.sh`. Settings and conversations are kept in `~/Library/Application Support/Plauderbaum`, and the API keys in the login keychain. |
+| Linux | Not supported yet. The Python code and the page are not tied to Windows, but there is no checked path for the app window. `./run.sh` still starts the server, and the page opens in the default browser. |
 | Firefox | Untested. Firefox has no app-window mode, so the page would run as a normal tab at `http://127.0.0.1:8765` and the server would keep running until the console window is closed. |
 
 ## Known limits
