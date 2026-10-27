@@ -72,8 +72,13 @@
             <select name="provider">
               <option value="anthropic">Anthropic (Claude, direct)</option>
               <option value="openrouter">OpenRouter (any model)</option>
+              <option value="cursor" hidden>Cursor (local agent)</option>
             </select>
           </label>
+          <p id="cursor-missing" class="settings-note" hidden>
+            Cursor is optional. Start with <code>./run.sh --with-cursor</code>
+            (or <code>run.bat --with-cursor</code>) to install it, then it appears here.
+          </p>
           <div data-provider="anthropic">
             <label>Anthropic API key
               <input name="api_key" type="password" autocomplete="off" placeholder="sk-ant-…">
@@ -92,6 +97,15 @@
               <input name="openrouter_model" type="text" list="openrouter-models" maxlength="100" autocomplete="off" spellcheck="false" placeholder="e.g. anthropic/claude-sonnet-5.5">
               <datalist id="openrouter-models"></datalist>
               <small>Any model id from openrouter.ai/models. Weaker models give weaker corrections.</small>
+            </label>
+          </div>
+          <div data-provider="cursor" hidden>
+            <label>Cursor API key
+              <input name="cursor_api_key" type="password" autocomplete="off" placeholder="cursor_…">
+              <small id="cursor-key-status"></small>
+            </label>
+            <label>Model
+              <select name="cursor_model"></select>
             </label>
           </div>
         </fieldset>

@@ -6,7 +6,7 @@ import { state, targetName } from "./state.js";
 
 const form = $("#settings-form");
 
-const SELECTS = ["provider", "model", "target_language", "level", "strictness", "speech_rate"];
+const SELECTS = ["provider", "model", "cursor_model", "target_language", "level", "strictness", "speech_rate"];
 
 const TEST_PHRASES = {
   it: "Buongiorno! Che cosa desidera?",
@@ -17,19 +17,31 @@ const TEST_PHRASES = {
   de: "Guten Morgen! Was darf es sein?",
 };
 
+const KEY_HINTS = {
+  "key-status": ["has_anthropic_key", "Create one at console.anthropic.com. It is kept in your system's credential store."],
+  "openrouter-key-status": ["has_openrouter_key", "Create one at openrouter.ai/keys. It is kept in your system's credential store."],
+  "cursor-key-status": ["has_cursor_key", "Create one at cursor.com/dashboard/integrations. It is kept in your system's credential store."],
+};
+
+let cursorAvailable = false;
+
 // Take over settings from the server and update every text that depends on them.
 function applySettings(settings) {
   state.settings = settings;
   $("#no-key").hidden = settings.has_key;
   const saved = "A key is saved. Leave this empty to keep it.";
-  $("#key-status").textContent = settings.has_anthropic_key
-    ? saved
-    : "Create one at console.anthropic.com. It is kept in your system's credential store.";
-  $("#openrouter-key-status").textContent = settings.has_openrouter_key
-    ? saved
-    : "Create one at openrouter.ai/keys. It is kept in your system's credential store.";
+  for (const [id, [flag, missing]] of Object.entries(KEY_HINTS)) {
+    $(`#${id}`).textContent = settings[flag] ? saved : missing;
+  }
   const name = targetName();
   document.querySelectorAll(".lang-name").forEach((node) => { node.textContent = name; });
+}
+
+function showCursorOption(available) {
+  cursorAvailable = available;
+  const option = form.elements.provider.querySelector('option[value="cursor"]');
+  option.hidden = !available;
+  $("#cursor-missing").hidden = available;
 }
 
 async function loadVoices(language, selected) {
@@ -64,10 +76,16 @@ function showProvider(provider) {
 }
 
 function fillForm(settings) {
-  for (const name of SELECTS) form.elements[name].value = settings[name];
+  for (const name of SELECTS) {
+    if (name === "provider" && settings.provider === "cursor" && !cursorAvailable) {
+      form.elements.provider.value = "anthropic";
+      continue;
+    }
+    if (form.elements[name]) form.elements[name].value = settings[name];
+  }
   form.elements.openrouter_model.value = settings.openrouter_model;
   form.elements.auto_speak.checked = settings.auto_speak;
-  showProvider(settings.provider);
+  showProvider(form.elements.provider.value);
 }
 
 function readForm() {
@@ -75,6 +93,7 @@ function readForm() {
     auto_speak: form.elements.auto_speak.checked,
     api_key: form.elements.api_key.value,
     openrouter_api_key: form.elements.openrouter_api_key.value,
+    cursor_api_key: form.elements.cursor_api_key.value,
     openrouter_model: form.elements.openrouter_model.value,
   };
   for (const name of [...SELECTS, "voice"]) {
@@ -85,16 +104,22 @@ function readForm() {
 
 async function saveSettings() {
   const data = await api("/api/settings", readForm());
+  if (typeof data.cursor_available === "boolean") showCursorOption(data.cursor_available);
   applySettings(data.settings);
   form.elements.api_key.value = "";
   form.elements.openrouter_api_key.value = "";
+  form.elements.cursor_api_key.value = "";
 }
 
 // Set the tab up with the answer of /api/settings. The returned promise
 // resolves when the voice list has arrived, which takes a moment.
-export function initSettings({ settings, languages, models }) {
+export function initSettings({ settings, languages, models, cursor_models, cursor_available }) {
   state.languages = languages;
+  showCursorOption(Boolean(cursor_available));
   for (const [id, label] of Object.entries(models)) form.elements.model.append(new Option(label, id));
+  for (const [id, label] of Object.entries(cursor_models || {})) {
+    form.elements.cursor_model.append(new Option(label, id));
+  }
   for (const [id, label] of Object.entries(languages)) form.elements.target_language.append(new Option(label, id));
   applySettings(settings);
   fillForm(settings);

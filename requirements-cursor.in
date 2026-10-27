@@ -1,0 +1,7 @@
+# Optional: local Cursor agent provider. Not installed by default.
+# After changing this file, regenerate the pinned requirements-cursor.txt:
+#   pip-compile --generate-hashes --strip-extras --no-header \
+#     --constraint requirements.txt --output-file requirements-cursor.txt \
+#     requirements-cursor.in
+# Install with the starters: ./run.sh --with-cursor   or   run.bat --with-cursor
+cursor-sdk==1.0.40

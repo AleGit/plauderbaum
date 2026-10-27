@@ -53,11 +53,19 @@ class KeysInSettingsTest(unittest.TestCase):
         self.file.write_text(json.dumps(content), encoding="utf-8")
 
     def test_saved_keys_go_to_the_key_store_and_not_into_the_file(self):
-        saved = self.store.save({"api_key": "sk-ant-1", "openrouter_api_key": "sk-or-1", "level": "B1"})
-        self.assertEqual((saved.api_key, saved.openrouter_api_key), ("sk-ant-1", "sk-or-1"))
+        saved = self.store.save({
+            "api_key": "sk-ant-1", "openrouter_api_key": "sk-or-1", "cursor_api_key": "cursor_1", "level": "B1",
+        })
+        self.assertEqual(
+            (saved.api_key, saved.openrouter_api_key, saved.cursor_api_key),
+            ("sk-ant-1", "sk-or-1", "cursor_1"),
+        )
         self.assertEqual(self.keys.get("api_key"), "sk-ant-1")
         self.assertEqual(self.keys.get("openrouter_api_key"), "sk-or-1")
-        self.assertNotIn("sk-", self.file.read_text(encoding="utf-8"))
+        self.assertEqual(self.keys.get("cursor_api_key"), "cursor_1")
+        written = self.file.read_text(encoding="utf-8")
+        self.assertNotIn("sk-", written)
+        self.assertNotIn("cursor_1", written)
         self.assertNotIn("api_key", self.file_content())
         self.assertEqual(self.file_content()["level"], "B1")
 

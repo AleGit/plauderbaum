@@ -363,6 +363,8 @@ input[type="text"], input[type="password"], select {
 .settings label { display: block; margin-top: 12px; font-size: .92rem; font-weight: 600; }
 .settings label > input, .settings label > select, .settings label > .row { margin-top: 4px; }
 .settings small { display: block; margin-top: 4px; font-weight: 400; color: var(--muted); }
+.settings-note { margin: 10px 0 0; font-size: .9rem; font-weight: 400; color: var(--muted); }
+.settings-note code { font-size: .85em; }
 .settings .row { display: flex; gap: 10px; }
 .settings .check { display: flex; align-items: center; gap: 10px; font-weight: 400; font-size: 1rem; }
 .settings .check input { width: 18px; height: 18px; accent-color: var(--green); }

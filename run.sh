@@ -1,7 +1,20 @@
 #!/bin/sh
 # Starts Plauderbaum on macOS (and other Unix systems). Mirrors run.bat.
+# Pass --with-cursor once to install the optional Cursor agent provider.
 set -eu
 cd "$(dirname "$0")"
+
+WITH_CURSOR=0
+for arg in "$@"; do
+    case "$arg" in
+        --with-cursor) WITH_CURSOR=1 ;;
+        *)
+            echo "Unknown option: $arg"
+            echo "Usage: ./run.sh [--with-cursor]"
+            exit 1
+            ;;
+    esac
+done
 
 if ! command -v python3 >/dev/null 2>&1; then
     echo "Python 3.12 or newer is required."
@@ -32,6 +45,26 @@ if ! cmp -s requirements.txt .venv/requirements.installed 2>/dev/null; then
         exit 1
     }
     cp requirements.txt .venv/requirements.installed
+fi
+
+if [ "$WITH_CURSOR" = 1 ]; then
+    mkdir -p .venv
+    touch .venv/cursor.enabled
+fi
+
+# Optional Cursor agent: installed only when enabled, never by the default start.
+if [ -f .venv/cursor.enabled ]; then
+    if ! cmp -s requirements-cursor.txt .venv/requirements-cursor.installed 2>/dev/null; then
+        echo "Installing optional Cursor support..."
+        .venv/bin/python -m pip install --quiet --disable-pip-version-check --require-hashes \
+            -r requirements.txt -r requirements-cursor.txt || {
+            echo
+            echo "Could not install Cursor support. Delete the .venv folder and try again,"
+            echo "or start without --with-cursor."
+            exit 1
+        }
+        cp requirements-cursor.txt .venv/requirements-cursor.installed
+    fi
 fi
 
 exec .venv/bin/python -m tutor

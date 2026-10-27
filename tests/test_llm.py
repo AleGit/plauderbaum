@@ -73,7 +73,7 @@ class AskTest(unittest.TestCase):
     def test_uses_the_chosen_provider_and_checks_the_answer(self):
         claude = mock.Mock(return_value="not json")
         openrouter = mock.Mock(return_value=json.dumps(REPLY))
-        with mock.patch.dict(llm.PROVIDERS, {"anthropic": claude, "openrouter": openrouter}):
+        with mock.patch.object(llm, "_providers", return_value={"anthropic": claude, "openrouter": openrouter}):
             settings = Settings(provider="openrouter")
             self.assertEqual(llm.ask(settings, "system", "user", REPLY_SCHEMA), REPLY)
             openrouter.assert_called_once_with(settings, "system", "user", REPLY_SCHEMA)
@@ -83,9 +83,63 @@ class AskTest(unittest.TestCase):
 
     def test_missing_key_is_reported_before_any_request(self):
         with mock.patch.dict("os.environ", {}, clear=True):
-            for provider in llm.PROVIDERS:
+            for provider in ("anthropic", "openrouter"):
                 with self.subTest(provider=provider), self.assertRaisesRegex(TutorError, "No API key"):
                     llm.ask(Settings(provider=provider), "system", "user", REPLY_SCHEMA)
+
+    def test_cursor_without_the_package_explains_how_to_install(self):
+        with mock.patch.object(llm, "cursor_available", return_value=False):
+            with self.assertRaisesRegex(TutorError, "--with-cursor"):
+                llm.ask(Settings(provider="cursor", cursor_api_key="cursor_test"), "s", "u", REPLY_SCHEMA)
+
+
+@unittest.skipUnless(llm.cursor_available(), "optional cursor-sdk is not installed")
+class CursorAgentTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        from cursor_sdk import AuthenticationError, CursorAgentError
+        from tutor.llm import cursor_agent
+        cls.AuthenticationError = AuthenticationError
+        cls.CursorAgentError = CursorAgentError
+        cls.cursor_agent = cursor_agent
+
+    def answer(self, status="finished", text='{"ok": true}'):
+        return mock.Mock(status=status, result=text)
+
+    def test_sends_one_prompt_with_no_tools(self):
+        with mock.patch.object(self.cursor_agent.Agent, "prompt", return_value=self.answer()) as prompt:
+            text = self.cursor_agent.complete(
+                Settings(cursor_api_key="cursor_test", cursor_model="composer-2.5"),
+                "Be a tutor.",
+                "Start.",
+                REPLY_SCHEMA,
+            )
+        self.assertEqual(text, '{"ok": true}')
+        message, options = prompt.call_args.args
+        self.assertIn("Be a tutor.", message)
+        self.assertIn("Start.", message)
+        self.assertIn("tutor_reply", message)
+        self.assertEqual(options.api_key, "cursor_test")
+        self.assertEqual(options.model, "composer-2.5")
+        self.assertEqual(options.tools, [])
+        self.assertTrue(options.local.sandbox_options.enabled)
+
+    def test_a_rejected_key_is_reported_plainly(self):
+        with mock.patch.object(self.cursor_agent.Agent, "prompt", side_effect=self.AuthenticationError("no")):
+            with self.assertRaisesRegex(TutorError, "rejected"):
+                self.cursor_agent.complete(Settings(cursor_api_key="cursor_test"), "s", "u", REPLY_SCHEMA)
+
+    def test_a_failed_run_is_reported_plainly(self):
+        with mock.patch.object(self.cursor_agent.Agent, "prompt", return_value=self.answer("error")):
+            with self.assertRaisesRegex(TutorError, "failed"):
+                self.cursor_agent.complete(Settings(cursor_api_key="cursor_test"), "s", "u", REPLY_SCHEMA)
+
+    def test_other_startup_errors_keep_the_message(self):
+        with mock.patch.object(
+            self.cursor_agent.Agent, "prompt", side_effect=self.CursorAgentError("bridge unavailable"),
+        ):
+            with self.assertRaisesRegex(TutorError, "bridge unavailable"):
+                self.cursor_agent.complete(Settings(cursor_api_key="cursor_test"), "s", "u", REPLY_SCHEMA)
 
 
 if __name__ == "__main__":

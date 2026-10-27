@@ -17,10 +17,10 @@ from . import __version__, roleplay
 from .conversations import ConversationStore
 from .errors import TutorError
 from .keychain import KeyStore, KeyStoreError, SystemKeyStore
-from .llm import openrouter
+from .llm import CURSOR_INSTALL_HINT, cursor_available, openrouter
 from .models import Conversation, ConversationRequest, ReplyRequest, StartRequest, TurnRequest
 from .paths import APP_NAME, ASSETS, WEB
-from .settings import LANGUAGES, MODELS, Settings, SettingsStore
+from .settings import CURSOR_MODELS, LANGUAGES, MODELS, Settings, SettingsStore
 from .speech import Speech
 
 ConversationId = Annotated[str, PathParam(pattern=r"^[0-9a-f-]{36}$")]
@@ -76,13 +76,20 @@ def settings_routes(settings: SettingsStore) -> APIRouter:
             "settings": settings.load().public(),
             "languages": LANGUAGES,
             "models": MODELS,
+            "cursor_models": CURSOR_MODELS,
+            "cursor_available": cursor_available(),
             "version": __version__,
         }
 
     @router.post("/settings")
     def post_settings(changes: dict):
+        if changes.get("provider") == "cursor" and not cursor_available():
+            raise HTTPException(status_code=400, detail=CURSOR_INSTALL_HINT)
         try:
-            return {"settings": settings.save(changes).public()}
+            return {
+                "settings": settings.save(changes).public(),
+                "cursor_available": cursor_available(),
+            }
         except ValueError as error:
             raise HTTPException(status_code=400, detail=str(error))
         except KeyStoreError as error:

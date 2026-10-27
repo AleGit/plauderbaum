@@ -12,6 +12,9 @@ To start
    from this folder. The first start takes a minute, because it sets up a
    private Python environment in the folder .venv next to it.
 3. Open Settings in the app and add your Anthropic or OpenRouter API key.
+   Optional: to use a local Cursor agent, start once with
+   run.bat --with-cursor  (Windows)  or  ./run.sh --with-cursor  (macOS),
+   then pick Cursor in Settings and add a Cursor API key.
 
 For a shortcut with an icon, run in this folder:
    powershell -ExecutionPolicy Bypass -File tools\make_shortcut.ps1

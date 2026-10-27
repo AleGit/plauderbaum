@@ -9,7 +9,7 @@ import os
 from dataclasses import asdict, dataclass, fields, replace
 from pathlib import Path
 
-from .keychain import KeyStore
+from .keychain import KeyStore, KeyStoreError
 
 LANGUAGES = {
     "it": "Italian",
@@ -20,15 +20,22 @@ LANGUAGES = {
     "de": "German",
 }
 
+CURSOR_MODELS = {
+    "composer-2.5": "Composer 2.5",
+    "auto": "Auto",
+}
+
 MODELS = {
     "claude-opus-5-5": "Claude Opus 5.5 (best corrections)",
     "claude-sonnet-5-5": "Claude Sonnet 5.5 (faster, half the price)",
 }
 
 # Provider id -> (settings field with its key, environment variable used as fallback).
+# Cursor needs an optional package; the default install still knows its settings fields.
 PROVIDER_KEYS = {
     "anthropic": ("api_key", "ANTHROPIC_API_KEY"),
     "openrouter": ("openrouter_api_key", "OPENROUTER_API_KEY"),
+    "cursor": ("cursor_api_key", "CURSOR_API_KEY"),
 }
 SECRET_FIELDS = {field for field, _ in PROVIDER_KEYS.values()}
 
@@ -40,6 +47,8 @@ class Settings:
     model: str = "claude-opus-5-5"
     openrouter_api_key: str = ""
     openrouter_model: str = "anthropic/claude-sonnet-5.5"
+    cursor_api_key: str = ""
+    cursor_model: str = "composer-2.5"
     target_language: str = "it"
     voice: str = "it-IT-IsabellaNeural"
     speech_rate: str = "+0%"
@@ -80,6 +89,7 @@ FIELDS = {field.name for field in fields(Settings)}
 
 CHOICES = {
     "provider": set(PROVIDER_KEYS),
+    "cursor_model": set(CURSOR_MODELS),
     "model": set(MODELS),
     "target_language": set(LANGUAGES),
     "speech_rate": {"-30%", "-15%", "+0%"},
@@ -130,9 +140,28 @@ class SettingsStore:
             if isinstance(stored.get(name), str) and stored[name].strip()
         }
 
+    def _claim_cursor_key(self, usable: dict) -> None:
+        """A Cursor key saved while Cursor was the only provider lives in api_key."""
+        key = usable.get("api_key", "")
+        if not key.startswith(("cursor_", "crsr_")):
+            return
+        usable["api_key"] = ""
+        if usable.get("cursor_api_key"):
+            return
+        usable["cursor_api_key"] = key
+        if self._keys.get("cursor_api_key") == key:
+            return
+        try:
+            self._keys.set("cursor_api_key", key)
+        except KeyStoreError:
+            pass
+
     def load(self) -> Settings:
         """The stored settings. Missing or unusable entries fall back to the defaults."""
         stored = self._read_file()
+        # Composer and Auto used to be stored in the Claude model field.
+        if isinstance(stored.get("model"), str) and stored["model"] in CURSOR_MODELS and "cursor_model" not in stored:
+            stored = {**stored, "cursor_model": stored["model"]}
         usable = {}
         for name, value in stored.items():
             if name in FIELDS and name not in SECRET_FIELDS:
@@ -144,6 +173,7 @@ class SettingsStore:
         plaintext = self._plaintext_keys(stored)
         for name in SECRET_FIELDS:
             usable[name] = self._keys.get(name) or plaintext.get(name, "")
+        self._claim_cursor_key(usable)
         return replace(DEFAULTS, **usable)
 
     def save(self, changes: dict) -> Settings:
